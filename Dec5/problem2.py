@@ -74,12 +74,12 @@ class Line:
                 end = self.start
 
             if start.y < end.y:
-                for value in range(1, end.x + 1):
+                for value in range(0, abs(end.x - start.x) + 1):
                     new_point = Point(start.x + value, start.y + value)
                     points.append(new_point)
             else:
-                for value in range(1, end.x + 1):
-                    new_point = Point(start.x - value, start.y - value)
+                for value in range(0, abs(end.x - start.x) + 1):
+                    new_point = Point(start.x + value, start.y - value)
                     points.append(new_point)
 
         return points
@@ -89,56 +89,6 @@ class Line:
 
     def __repr__(self):
         return f"({self.start.x},{self.start.y}) -> ({self.end.x},{self.end.y})"
-
-
-def find_intersect_perpendicular_lines(line1: Line, line2: Line) -> Union[Point, None]:
-    if (
-        line1.vertical_or_horiztonal() == LineType.HORIZONTAL
-        and line2.vertical_or_horiztonal() == LineType.HORIZONTAL
-    ):
-        raise Exception(
-            "Lines are both horizontal, this function is for perpendicular lines"
-        )
-    elif (
-        line1.vertical_or_horiztonal() == LineType.VERTICAL
-        and line2.vertical_or_horiztonal() == LineType.VERTICAL
-    ):
-        raise Exception(
-            "Lines are both vertical, this function is for perpendicular lines"
-        )
-    elif (
-        line1.vertical_or_horiztonal() == LineType.DIAGONAL
-        or line2.vertical_or_horiztonal() == LineType.DIAGONAL
-    ):
-        raise Exception(
-            "Lines are diagonal, this function is for perpendicular horizontal and vertical lines"
-        )
-
-    vertical_line = None
-    horizontal_line = None
-
-    if line1.vertical_or_horiztonal() == LineType.VERTICAL:
-        vertical_line = line1
-        horizontal_line = line2
-    else:
-        vertical_line = line2
-        horizontal_line = line1
-
-    vert_x = vertical_line.start.x
-    hor_x_min = min(horizontal_line.start.x, horizontal_line.end.x)
-    hor_x_max = max(horizontal_line.start.x, horizontal_line.end.x)
-
-    hor_y = horizontal_line.start.y
-    vert_y_min = min(vertical_line.start.y, vertical_line.end.y)
-    vert_y_max = max(vertical_line.start.y, vertical_line.end.y)
-
-    if (vert_x >= hor_x_min and vert_x <= hor_x_max) and (
-        hor_y >= vert_y_min and hor_y <= vert_y_max
-    ):
-        intersect_point = Point(vert_x, hor_y)
-        return intersect_point
-
-    return None
 
 
 with open("./input.txt") as reader:
@@ -155,12 +105,18 @@ with open("./input.txt") as reader:
         print(line_parts)
         start = line_parts[0].split(",")
         end = line_parts[1].split(",")
+        print(start)
+        print(end)
         start_point = Point(int(start[0].strip()), int(start[1].strip()))
         end_point = Point(int(end[0].strip()), int(end[1].strip()))
 
         line_segment = Line(start_point, end_point)
-
-        all_lines.append(line_segment)
+        if line_segment.line_orientation() in [
+            LineType.VERTICAL,
+            LineType.HORIZONTAL,
+            LineType.DIAGONAL,
+        ]:
+            all_lines.append(line_segment)
 
         line = reader.readline()
 
@@ -170,17 +126,28 @@ with open("./input.txt") as reader:
 
     intersection_points: MutableSet[Point] = set()
 
+    total_line_comparison = 0
+    coords = {}
+    intersect_coords = []
     for index, line in enumerate(all_lines):
-        for index2, line2 in enumerate(all_lines):
-            if index == index2:
-                continue
+        points = line.draw_line()
+        for point in points:
+            if point in coords.keys():
+                coords[point] += 1
+                if point not in intersect_coords:
+                    intersect_coords.append(point)
+            else:
+                coords[point] = 1
 
-            line_list = line.draw_line()
-            line2_list = line2.draw_line()
+    print(len(coords.keys()))
+    print(len(intersect_coords))
 
-            line2_set = set(line_list)
-            line_set = set(line2_list)
-            intersect = line2_set.intersection(line_set)
-            intersection_points.update(intersect)
+    for index in range(0, 50):
+        for index2 in range(0, 50):
+            point = Point(index2, index)
+            if point in coords.keys():
+                print(f" {coords[point]} ", end="")
+            else:
+                print(" . ", end="")
 
-    print(len(intersection_points))
+        print("\n")
